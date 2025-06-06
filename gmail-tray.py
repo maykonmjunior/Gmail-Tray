@@ -3,18 +3,18 @@ import gi
 import subprocess
 import signal
 import threading
-import sys
-import socket
+import fcntl
 
-LOCK_SOCKET = "/tmp/gmail-tray.lock"
+LOCK_FILE = "/tmp/gmail-tray.lock"
 
 def already_running():
+    global lock_fp
     try:
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-        s.bind(LOCK_SOCKET)
-    except socket.error:
+        lock_fp = open(LOCK_FILE, 'w')
+        fcntl.flock(lock_fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return False
+    except OSError:
         return True
-    return False
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('AppIndicator3', '0.1')
@@ -115,6 +115,5 @@ def main():
 if __name__ == "__main__":
     if already_running():
         print("Gmail Tray is already running.")
-        sys.exit(0)
     else:
         main()
